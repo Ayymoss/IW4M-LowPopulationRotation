@@ -1,4 +1,4 @@
-﻿namespace IW4M_LowPopMapRotate;
+﻿namespace IW4MLowPopRotation;
 
 public class ServerInfo
 {

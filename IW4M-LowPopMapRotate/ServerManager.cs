@@ -1,7 +1,7 @@
 ﻿using System.Timers;
 using SharedLibraryCore;
 
-namespace IW4M_LowPopMapRotate;
+namespace IW4MLowPopRotation;
 
 public class ServerManager
 {
@@ -27,12 +27,12 @@ public class ServerManager
         }
     }
 
-    public void TimerTrigger(object source, ElapsedEventArgs e)
+    public void TimerTrigger(object? source, ElapsedEventArgs e)
     {
         foreach (var server in Servers.Keys)
         {
+            if (!Plugin.ServersWithRotation.Contains(server.EndPoint)) return;
             if (Servers[server].CurrentMapName == "mp_rust") return;
-            
             if (Servers[server].ClientNum <= 1) server.LoadMap("mp_rust");
         }
     }

@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IW4M-LowPopMapRotate", "IW4M-LowPopMapRotate\IW4M-LowPopMapRotate.csproj", "{CE2C7793-9219-4D59-B3D0-0E23D8034025}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IW4MLowPopRotation", "IW4M-LowPopMapRotate\IW4MLowPopRotation.csproj", "{CE2C7793-9219-4D59-B3D0-0E23D8034025}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
