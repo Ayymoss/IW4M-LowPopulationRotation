@@ -14,17 +14,18 @@ public class Plugin : IPlugin
     }
 
     public string Name => "Low Population Rotation";
-    public float Version => 20220823f;
+    public float Version => 20220826f;
     public string Author => "Amos";
-    
+
     private readonly ServerManager _serverManager = new();
     private readonly IConfigurationHandler<ServerConfiguration> ConfigurationHandler;
     public const int ConfigurationVersion = 1;
-    public static List<long> ServersWithRotation;
-    
+    public static List<string> ServersWithRotation;
+
     public Task OnEventAsync(GameEvent gameEvent, Server server)
     {
-        _serverManager.EventUpdate(server);
+        // 1/2 if statement for checking if config has any entries, if not, return.
+        if (ServersWithRotation.Any()) _serverManager.EventUpdate(server);
         return Task.CompletedTask;
     }
 
@@ -37,7 +38,7 @@ public class Plugin : IPlugin
             ConfigurationHandler.Set(new ServerConfiguration());
             await ConfigurationHandler.Save();
         }
-        
+
         if (ConfigurationHandler.Configuration().Version < ConfigurationVersion)
         {
             Console.WriteLine($"[{Name}] Configuration version is outdated, updating.");
@@ -46,13 +47,13 @@ public class Plugin : IPlugin
         }
 
         ServersWithRotation = ConfigurationHandler.Configuration().ServersWithRotation;
-        if (!ServersWithRotation.Any()) await OnUnloadAsync();
 
         var timer = new Timer();
         timer.Interval = ConfigurationHandler.Configuration().CheckInMilliseconds;
         timer.Elapsed += _serverManager.TimerTrigger;
         timer.AutoReset = true;
-        timer.Enabled = true;
+        // 2/2 - don't enable timer if cfg is empty.
+        if (ServersWithRotation.Any()) timer.Enabled = true;
     }
 
     public Task OnUnloadAsync()

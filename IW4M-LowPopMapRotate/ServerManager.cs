@@ -31,7 +31,7 @@ public class ServerManager
     {
         foreach (var server in Servers.Keys)
         {
-            if (!Plugin.ServersWithRotation.Contains(server.EndPoint)) return;
+            if (!Plugin.ServersWithRotation.Contains(server.ResolvedIpEndPoint.ToString())) return;
             if (Servers[server].CurrentMapName == "mp_rust") return;
             if (Servers[server].ClientNum <= 1) server.LoadMap("mp_rust");
         }
