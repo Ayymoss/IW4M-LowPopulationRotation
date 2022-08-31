@@ -61,7 +61,7 @@ public class Plugin : IPlugin
         if (ServersWithRotation.Any()) timer.Enabled = true;
     }
 
-    private void TimerTrigger(object? source, ElapsedEventArgs e)
+    private async void TimerTrigger(object? source, ElapsedEventArgs e)
     {
         foreach (var server in Manager.GetServers())
         {
@@ -82,8 +82,9 @@ public class Plugin : IPlugin
                 }
 
                 if (server.ClientNum > 1) continue;
-                server.LoadMap(RotateToMap);
+
                 _logger.LogInformation("[{Name}] Rotating to {RotateToMap}", Name, RotateToMap);
+                await server.LoadMap(RotateToMap);
             }
         }
     }
