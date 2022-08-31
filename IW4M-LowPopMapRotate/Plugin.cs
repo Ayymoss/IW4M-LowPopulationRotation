@@ -1,4 +1,6 @@
-﻿using SharedLibraryCore;
+﻿using System.Timers;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using Timer = System.Timers.Timer;
 
@@ -6,26 +8,27 @@ namespace IW4MLowPopRotation;
 
 public class Plugin : IPlugin
 {
-    public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+    public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, ILogger<Plugin> logger)
     {
+        _logger = logger;
         ConfigurationHandler =
             configurationHandlerFactory.GetConfigurationHandler<ServerConfiguration>(
                 "LowPopulationSettings");
     }
 
     public string Name => "Low Population Rotation";
-    public float Version => 20220826f;
+    public float Version => 20220901f;
     public string Author => "Amos";
 
-    private readonly ServerManager _serverManager = new();
+    private readonly ILogger<Plugin> _logger;
     private readonly IConfigurationHandler<ServerConfiguration> ConfigurationHandler;
-    public const int ConfigurationVersion = 1;
-    public static List<string> ServersWithRotation;
+    public const int ConfigurationVersion = 2;
+    private static List<string> ServersWithRotation;
+    private static string RotateToMap;
+    private static IManager Manager;
 
     public Task OnEventAsync(GameEvent gameEvent, Server server)
     {
-        // 1/2 if statement for checking if config has any entries, if not, return.
-        if (ServersWithRotation.Any()) _serverManager.EventUpdate(server);
         return Task.CompletedTask;
     }
 
@@ -46,14 +49,32 @@ public class Plugin : IPlugin
             await ConfigurationHandler.Save();
         }
 
+        Manager = manager;
         ServersWithRotation = ConfigurationHandler.Configuration().ServersWithRotation;
+        RotateToMap = ConfigurationHandler.Configuration().RotateToMap;
 
         var timer = new Timer();
         timer.Interval = ConfigurationHandler.Configuration().CheckInMilliseconds;
-        timer.Elapsed += _serverManager.TimerTrigger;
+        timer.Elapsed += TimerTrigger;
         timer.AutoReset = true;
-        // 2/2 - don't enable timer if cfg is empty.
         if (ServersWithRotation.Any()) timer.Enabled = true;
+    }
+    
+    private void TimerTrigger(object? source, ElapsedEventArgs e)
+    {
+        foreach (var server in Manager.GetServers())
+        {
+            _logger.LogDebug($"[{Name}] Checking server {server.IP}:{server.Port} for enabled rotation");
+            if (!ServersWithRotation.Contains($"{server.IP}:{server.Port}")) return;
+            
+            _logger.LogDebug($"[{Name}] Checking server {server.IP}:{server.Port} for different map");
+            if (server.CurrentMap.Name == RotateToMap) return;
+            
+            _logger.LogDebug($"[{Name}] Checking server {server.IP}:{server.Port} for low population");
+            if (server.ClientNum <= 1) server.LoadMap(RotateToMap);
+            
+            _logger.LogInformation($"[{Name}] Rotating {server.IP}:{server.Port} to {RotateToMap}");
+        }
     }
 
     public Task OnUnloadAsync()
