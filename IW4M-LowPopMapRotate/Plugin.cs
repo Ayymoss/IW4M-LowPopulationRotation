@@ -1,5 +1,6 @@
 ﻿using System.Timers;
 using Microsoft.Extensions.Logging;
+using Serilog.Context;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using Timer = System.Timers.Timer;
@@ -59,21 +60,31 @@ public class Plugin : IPlugin
         timer.AutoReset = true;
         if (ServersWithRotation.Any()) timer.Enabled = true;
     }
-    
+
     private void TimerTrigger(object? source, ElapsedEventArgs e)
     {
         foreach (var server in Manager.GetServers())
         {
-            _logger.LogDebug($"[{Name}] Checking server {server.IP}:{server.Port} for enabled rotation");
-            if (!ServersWithRotation.Contains($"{server.IP}:{server.Port}")) return;
-            
-            _logger.LogDebug($"[{Name}] Checking server {server.IP}:{server.Port} for different map");
-            if (server.CurrentMap.Name == RotateToMap) return;
-            
-            _logger.LogDebug($"[{Name}] Checking server {server.IP}:{server.Port} for low population");
-            if (server.ClientNum <= 1) server.LoadMap(RotateToMap);
-            
-            _logger.LogInformation($"[{Name}] Rotating {server.IP}:{server.Port} to {RotateToMap}");
+            using (LogContext.PushProperty("Server", server.ToString()))
+            {
+                _logger.LogDebug("[{Name}] Running through logic check", Name);
+
+                if (!ServersWithRotation.Contains($"{server.IP}:{server.Port}"))
+                {
+                    _logger.LogDebug("[{Name}] Not in rotation list, skipping", Name);
+                    continue;
+                }
+
+                if (server.CurrentMap.Name == RotateToMap)
+                {
+                    _logger.LogDebug("[{Name}] Already on rotation map, skipping", Name);
+                    continue;
+                }
+
+                if (server.ClientNum > 1) continue;
+                server.LoadMap(RotateToMap);
+                _logger.LogInformation("[{Name}] Rotating to {RotateToMap}", Name, RotateToMap);
+            }
         }
     }
 
